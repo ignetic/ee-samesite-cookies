@@ -5,7 +5,7 @@ class Samesite_cookies_ext
 	
 	public $settings = array();
 	public $name = 'SameSite Cookies';
-	public $version = '1.0';
+	public $version = '1.1';
 	public $description = 'Add SameSite attribute to ExpressionEngine cookies';
 	public $settings_exist = 'y';
 	public $docs_url = '';
@@ -72,10 +72,11 @@ class Samesite_cookies_ext
 	 * Take control of setting cookies after cookie parameters have been normalized according to the cookie configuration settings.
 	 *
 	 * @param array: Array of prepped cookie parameters, which include the following keys: prefix, name, value, expire, path, domain, secure_cookie
-	 * @return void
+	 * @return bool
 	 */
 	public function set_cookie_end($data)
 	{
+		$return = FALSE;
 		if (isset($this->settings['cookies']) && ! empty(isset($this->settings['cookies'])))
 		{
 			$cookies = explode("\n", $this->settings['cookies']);
@@ -86,16 +87,16 @@ class Samesite_cookies_ext
 			
 			if (isset($this->settings['all_cookies']) && $this->settings['all_cookies'] === 'apply_all')
 			{
-				$this->set_samesite_cookie($data);
+				$return = $this->set_samesite_cookie($data);
 				ee()->extensions->end_script = TRUE;
 			}
 			else if (in_array($cookieName, $cookies))
 			{
-				$this->set_samesite_cookie($data);
+				$return = $this->set_samesite_cookie($data);
 				ee()->extensions->end_script = TRUE;
 			}
 		}
-		return $data;
+		return $return;
 	}
 	
 	private function set_samesite_cookie($data)
@@ -103,7 +104,7 @@ class Samesite_cookies_ext
 		if (PHP_VERSION_ID < 70300) {
 			// Older versions of PHP do not support an array as the 3rd parameter,
 			// thus the SameSite setting must be hacked in with the path option.
-			setcookie($data['prefix'].$data['name'], $data['value'],
+			return setcookie($data['prefix'].$data['name'], $data['value'],
 				$data['expire'],
 				$data['path'] . '; SameSite=' . $data['samesite'],
 				$data['domain'],
@@ -111,7 +112,7 @@ class Samesite_cookies_ext
 				$data['httponly']
 			);
 		} else {
-			setcookie($data['prefix'].$data['name'], $data['value'], [
+			return setcookie($data['prefix'].$data['name'], $data['value'], [
 				'expires' => $data['expire'],
 				'path' => $data['path'],
 				'domain' => $data['domain'],
@@ -120,6 +121,7 @@ class Samesite_cookies_ext
 				'samesite' => $data['samesite'],
 			]);
 		}
+		return FALSE;
 	}
 	
 }

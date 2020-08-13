@@ -17,6 +17,12 @@ Here you may select which option to apply to the SameSite cookie attribute.
 - Lax
 - Strict
 
+#### Make these cookies secure ####
+
+Force the entered cookies to be secure. Browsers may block cookies set with 'SameSite=None' but without 'Secure'.
+- Yes
+- No
+
 #### Apply this to all cookies or to just the entered ones below ####
 
 - Apply to entered cookies only: 

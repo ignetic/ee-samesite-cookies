@@ -2,6 +2,8 @@
 
 $lang = array(
 	'samesite' => 'Select SameSite cookie attribute (example SameSite=None):',
+	'secure_cookies' => 'Make these cookies secure:
+		<br><small><i>Browsers may block cookies set with `SameSite=None` but without `Secure`.</i></small>',
 	'all_cookies' => 'Apply this to all cookies or to just the entered ones below:',
 	'apply_selected' => 'Apply to entered cookies only',
 	'apply_all' => 'Apply to ALL site-wide cookies',

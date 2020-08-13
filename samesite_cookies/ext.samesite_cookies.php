@@ -59,8 +59,8 @@ class Samesite_cookies_ext
 		$settings = array();
 		
 		$settings['samesite'] = array('s', array('' => 'default', 'None' => 'None', 'Lax' => 'Lax', 'Strict' => 'Strict'), 'None');
+		$settings['secure_cookies'] = array('s', array('yes' => lang('Yes'), 'no' => lang('No')), 'yes');
 		$settings['all_cookies'] = array('s', array('apply_selected' => lang('apply_selected'), 'apply_all' => lang('apply_all')), 'apply_selected');
-
 		$settings['cookies'] = array('t', array('rows' => '20'), '');
 
 		return $settings;
@@ -83,6 +83,11 @@ class Samesite_cookies_ext
 
 			$cookieName = $data['prefix'].$data['name'];
 			$data['samesite'] = (isset($this->settings['samesite']) ? $this->settings['samesite'] : '');
+			
+			if (isset($this->settings['secure_cookies']) && $this->settings['secure_cookies'] === 'yes')
+			{
+				$data['secure_cookie'] = 1;
+			}
 			
 			if (isset($this->settings['all_cookies']) && $this->settings['all_cookies'] === 'apply_all')
 			{

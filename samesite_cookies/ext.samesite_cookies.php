@@ -15,7 +15,6 @@ class Samesite_cookies_ext
 	{
 
 		$this->settings = $settings;
-		
 
 	}
 
@@ -77,9 +76,9 @@ class Samesite_cookies_ext
 	public function set_cookie_end($data)
 	{
 		$return = FALSE;
-		if (isset($this->settings['cookies']) && ! empty(isset($this->settings['cookies'])))
+		if (isset($this->settings['cookies']) && ! empty($this->settings['cookies']))
 		{
-			$cookies = explode("\n", $this->settings['cookies']);
+			$cookies = explode("\n", str_replace(",", "\n", trim($this->settings['cookies'])));
 			$cookies = array_map('trim', $cookies);
 
 			$cookieName = $data['prefix'].$data['name'];

@@ -40,3 +40,6 @@ With recent changes to Google Chrome, cookies are now defaulted to SameSite=Lax.
 
 This addon can resolve issues where offsite cookies are required, such as offsite payment gateways and with 3D Secure.
 
+Note that not all browsers are compatible with SameSite=None. This addon will handle those that are not compatible and leave the parameter blank.
+https://www.chromium.org/updates/same-site/incompatible-clients
+

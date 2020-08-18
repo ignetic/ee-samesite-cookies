@@ -1,11 +1,15 @@
 <?php if ( ! defined('BASEPATH')) exit('No direct script access allowed');
 
+require_once 'vendor/uvii/samesitenone/src/SameSiteNone.php';
+
+use Uvii\SameSiteNone;
+
 class Samesite_cookies_ext
 {
 	
 	public $settings = array();
 	public $name = 'SameSite Cookies';
-	public $version = '1.1';
+	public $version = '1.2';
 	public $description = 'Add SameSite attribute to ExpressionEngine cookies';
 	public $settings_exist = 'y';
 	public $docs_url = '';
@@ -76,30 +80,42 @@ class Samesite_cookies_ext
 	public function set_cookie_end($data)
 	{
 		$return = FALSE;
+		$cookies = array();
+		
+		// Not all browsers are compatible with SameSite=None
+		// https://www.chromium.org/updates/same-site/incompatible-clients
+		$userAgent = ee()->session->userdata('user_agent');		
+		$SameSiteNoneSafe = SameSiteNone::isSafe($userAgent);
+		
 		if (isset($this->settings['cookies']) && ! empty($this->settings['cookies']))
 		{
 			$cookies = explode("\n", str_replace(",", "\n", trim($this->settings['cookies'])));
 			$cookies = array_map('trim', $cookies);
-
-			$cookieName = $data['prefix'].$data['name'];
-			$data['samesite'] = (isset($this->settings['samesite']) ? $this->settings['samesite'] : '');
-			
-			if (isset($this->settings['secure_cookies']) && $this->settings['secure_cookies'] === 'yes')
-			{
-				$data['secure_cookie'] = 1;
-			}
-			
-			if (isset($this->settings['all_cookies']) && $this->settings['all_cookies'] === 'apply_all')
-			{
-				$return = $this->set_samesite_cookie($data);
-				ee()->extensions->end_script = TRUE;
-			}
-			else if (in_array($cookieName, $cookies))
-			{
-				$return = $this->set_samesite_cookie($data);
-				ee()->extensions->end_script = TRUE;
-			}
 		}
+		
+		$data['samesite'] = (isset($this->settings['samesite']) ? $this->settings['samesite'] : '');
+		
+		if ( ! $SameSiteNoneSafe && $data['samesite'] == 'None')
+		{
+			$data['samesite'] = '';
+		}
+		
+		if (isset($this->settings['secure_cookies']) && $this->settings['secure_cookies'] === 'yes')
+		{
+			$data['secure_cookie'] = 1;
+		}
+		
+		if (isset($this->settings['all_cookies']) && $this->settings['all_cookies'] === 'apply_all')
+		{
+			$return = $this->set_samesite_cookie($data);
+			ee()->extensions->end_script = TRUE;
+		}
+		else if (in_array($data['prefix'].$data['name'], $cookies))
+		{
+			$return = $this->set_samesite_cookie($data);
+			ee()->extensions->end_script = TRUE;
+		}
+		
 		return $return;
 	}
 	
@@ -110,7 +126,7 @@ class Samesite_cookies_ext
 			// thus the SameSite setting must be hacked in with the path option.
 			return setcookie($data['prefix'].$data['name'], $data['value'],
 				$data['expire'],
-				$data['path'] . '; SameSite=' . $data['samesite'],
+				$data['path'] . ( ! empty($data['samesite']) ? '; SameSite=' . $data['samesite'] : ''),
 				$data['domain'],
 				$data['secure_cookie'],
 				$data['httponly']

@@ -9,7 +9,7 @@ class Samesite_cookies_ext
 	
 	public $settings = array();
 	public $name = 'SameSite Cookies';
-	public $version = '1.2';
+	public $version = '1.3';
 	public $description = 'Add SameSite attribute to ExpressionEngine cookies';
 	public $settings_exist = 'y';
 	public $docs_url = '';
@@ -62,10 +62,11 @@ class Samesite_cookies_ext
 	{
 		$settings = array();
 		
-		$settings['samesite'] = array('s', array('' => 'default', 'None' => 'None', 'Lax' => 'Lax', 'Strict' => 'Strict'), 'None');
-		$settings['secure_cookies'] = array('s', array('yes' => lang('Yes'), 'no' => lang('No')), 'yes');
-		$settings['all_cookies'] = array('s', array('apply_selected' => lang('apply_selected'), 'apply_all' => lang('apply_all')), 'apply_selected');
-		$settings['cookies'] = array('t', array('rows' => '20'), '');
+		$settings['default_cookies'] = array('s', array('' => 'default', 'None' => 'None', 'Lax' => 'Lax', 'Strict' => 'Strict'), '');
+		$settings['samesite_none'] = array('t', array('rows' => '20'), '');
+		$settings['samesite_lax'] = array('t', array('rows' => '20'), '');
+		$settings['samesite_strict'] = array('t', array('rows' => '20'), '');
+		$settings['secure_samesite_none'] = array('s', array('yes' => lang('Yes'), 'no' => lang('No')), 'yes');
 
 		return $settings;
 	}
@@ -80,44 +81,88 @@ class Samesite_cookies_ext
 	public function set_cookie_end($data)
 	{
 		$return = FALSE;
-		$cookies = array();
+		
+		$cookie_name = $data['prefix'].$data['name'];
+		$cookies = array(
+			'none' => array(),
+			'lax' => array(),
+			'strict' => array(),
+		);
+		
+		// Just in case this becomes available in the future
+		if ( ! isset($data['samesite']))
+		{
+			$data['samesite'] = '';
+		}
 		
 		// Not all browsers are compatible with SameSite=None
 		// https://www.chromium.org/updates/same-site/incompatible-clients
 		$userAgent = ee()->session->userdata('user_agent');		
 		$SameSiteNoneSafe = SameSiteNone::isSafe($userAgent);
 		
-		if (isset($this->settings['cookies']) && ! empty($this->settings['cookies']))
+		$cookie_found = FALSE;
+		
+		foreach ($cookies as $key => $val)
 		{
-			$cookies = explode("\n", str_replace(",", "\n", trim($this->settings['cookies'])));
-			$cookies = array_map('trim', $cookies);
+			$setting_name = 'samesite_'.$key;
+			if (isset($this->settings[$setting_name]) && ! empty($this->settings[$setting_name]))
+			{
+				$setting = explode("\n", str_replace(",", "\n", trim($this->settings[$setting_name])));
+				$cookies[$key] = array_map('trim', $setting);
+				if (in_array($cookie_name, $setting))
+				{
+					$cookie_found = TRUE;
+				}
+			}
 		}
-		
-		$data['samesite'] = (isset($this->settings['samesite']) ? $this->settings['samesite'] : '');
-		
-		if ( ! $SameSiteNoneSafe && $data['samesite'] == 'None')
+
+		if ($cookie_found)
 		{
-			$data['samesite'] = '';
-		}
-		
-		if (isset($this->settings['secure_cookies']) && $this->settings['secure_cookies'] === 'yes')
-		{
-			$data['secure_cookie'] = 1;
-		}
-		
-		if (isset($this->settings['all_cookies']) && $this->settings['all_cookies'] === 'apply_all')
-		{
+			foreach ($cookies as $key => $val)
+			{
+				$setting_name = 'samesite_'.$key;
+				$samesite_attr = ucfirst($key);
+				if (in_array($cookie_name, $val))
+				{
+					if ($key == 'none')
+					{
+						// Not all browsers are compatible with SameSite=None
+						$data['samesite'] = ($SameSiteNoneSafe ? $samesite_attr : '');
+						// Some browsers may block cookies set with `SameSite=None` but without `Secure`.
+						if (isset($this->settings['secure_cookies']) && $this->settings['secure_cookies'] === 'yes')
+						{
+							$data['secure_cookie'] = 1;
+						}
+					}
+					else
+					{
+						$data['samesite'] = $samesite_attr;
+					}
+				}
+			}
+			
 			$return = $this->set_samesite_cookie($data);
 			ee()->extensions->end_script = TRUE;
+			
 		}
-		else if (in_array($data['prefix'].$data['name'], $cookies))
+		else if (isset($this->settings['default_cookies']) && $this->settings['default_cookies'] !== '')
 		{
+			if ($this->settings['default_cookies'] == 'None')
+			{
+				$data['samesite'] = ($SameSiteNoneSafe ? $this->settings['default_cookies'] : '');
+			}
+			else
+			{
+				$data['samesite'] = $this->settings['default_cookies'];
+			}
+			
 			$return = $this->set_samesite_cookie($data);
 			ee()->extensions->end_script = TRUE;
 		}
 		
 		return $return;
 	}
+	
 	
 	private function set_samesite_cookie($data)
 	{

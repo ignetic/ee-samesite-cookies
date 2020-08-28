@@ -5,7 +5,7 @@ return array(
     'author_url'     => 'https://github.com/ignetic',
     'name'           => 'SameSite Cookies',
     'description'    => 'Add SameSite attribute to ExpressionEngine cookies',
-    'version'        => '1.2',
+    'version'        => '1.3',
     'namespace'      => '\\',
     'settings_exist' => TRUE,
 );

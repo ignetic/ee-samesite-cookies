@@ -9,7 +9,7 @@ class Samesite_cookies_ext
 	
 	public $settings = array();
 	public $name = 'SameSite Cookies';
-	public $version = '1.3';
+	public $version = '1.3.1';
 	public $description = 'Add SameSite attribute to ExpressionEngine cookies';
 	public $settings_exist = 'y';
 	public $docs_url = '';
@@ -141,7 +141,7 @@ class Samesite_cookies_ext
 				}
 			}
 			
-			$return = $this->set_samesite_cookie($data);
+			$return = $this->set_samesite_cookie($data, $SameSiteNoneSafe);
 			ee()->extensions->end_script = TRUE;
 			
 		}
@@ -164,27 +164,30 @@ class Samesite_cookies_ext
 	}
 	
 	
-	private function set_samesite_cookie($data)
+	private function set_samesite_cookie($data, $SameSiteNoneSafe=TRUE)
 	{
 		if (PHP_VERSION_ID < 70300) {
 			// Older versions of PHP do not support an array as the 3rd parameter,
 			// thus the SameSite setting must be hacked in with the path option.
 			return setcookie($data['prefix'].$data['name'], $data['value'],
 				$data['expire'],
-				$data['path'] . ( ! empty($data['samesite']) ? '; SameSite=' . $data['samesite'] : ''),
+				$data['path'] . ($SameSiteNoneSafe === TRUE ? '; SameSite=' . $data['samesite'] : ''),
 				$data['domain'],
 				$data['secure_cookie'],
 				$data['httponly']
 			);
 		} else {
-			return setcookie($data['prefix'].$data['name'], $data['value'], [
+			$cookieParams = [
 				'expires' => $data['expire'],
 				'path' => $data['path'],
 				'domain' => $data['domain'],
 				'secure' => $data['secure_cookie'],
-				'httponly' => $data['httponly'],
-				'samesite' => $data['samesite'],
-			]);
+				'httponly' => $data['httponly']
+			];
+			if ($SameSiteNoneSafe === TRUE) {
+				$cookieParams[] = $data['samesite'];
+			}
+			return setcookie($data['prefix'].$data['name'], $data['value'], $cookieParams);
 		}
 		return FALSE;
 	}

@@ -185,7 +185,7 @@ class Samesite_cookies_ext
 				'httponly' => $data['httponly']
 			];
 			if ($SameSiteNoneSafe === TRUE) {
-				$cookieParams[] = $data['samesite'];
+				$cookieParams['samesite'] = $data['samesite'];
 			}
 			return setcookie($data['prefix'].$data['name'], $data['value'], $cookieParams);
 		}

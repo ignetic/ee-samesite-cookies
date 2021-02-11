@@ -97,7 +97,7 @@ class Samesite_cookies_ext
 		
 		// Not all browsers are compatible with SameSite=None
 		// https://www.chromium.org/updates/same-site/incompatible-clients
-		$userAgent = ee()->session->userdata('user_agent');		
+		$userAgent = (isset($_SERVER['HTTP_USER_AGENT']) ? $_SERVER['HTTP_USER_AGENT'] : '');
 		$SameSiteNoneSafe = SameSiteNone::isSafe($userAgent);
 		
 		$cookie_found = FALSE;
